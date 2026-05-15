@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MOSFET 전기장 기반 전류 제어 시뮬레이션</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: white;
+        font-family: "Pretendard", sans-serif;
+        overflow: hidden;
+        user-select: none;
+    }
+
+    .container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mosfet-wrapper {
+        position: relative;
+        width: 900px;
+        height: 600px;
+    }
+
+    .mosfet-image {
+        width: 100%;
+        height: auto;
+        display: block;
+        position: relative;
+        z-index: 1;
+    }
+
+    button {
+        position: absolute;
+        padding: 12px 18px;
+        border: none;
+        border-radius: 10px;
+        background: #111;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+        z-index: 20;
+    }
+
+    button:hover {
+        background: #333;
+        transform: translateY(-2px);
+    }
+
+    button:disabled {
+        background: #999;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    #gateBtn {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    #sourceBtn {
+        top: 160px;
+        left: 70px;
+    }
+
+    .status {
+        position: absolute;
+        top: 25px;
+        right: 20px;
+        width: 250px;
+        padding: 18px;
+        border: 2px solid #ddd;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.95);
+        z-index: 30;
+        line-height: 1.7;
+        font-size: 15px;
+    }
+
+    .field {
+        position: absolute;
+        left: 50%;
+        top: 108px;
+        transform: translateX(-50%);
+        width: 118px;
+        height: 210px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.8s;
+        z-index: 5;
+    }
+
+    .field.active {
+        opacity: 1;
+    }
+
+    .field::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+            to bottom,
+            rgba(0,150,255,0.15),
+            rgba(0,150,255,0.15) 8px,
+            transparent 8px,
+            transparent 16px
+        );
+        animation: electricField 0.6s linear infinite;
+    }
+
+    @keyframes electricField {
+        from {
+            background-position-y: 0;
+        }
+        to {
+            background-position-y: 16px;
+        }
+    }
+
+    .channel {
+        position: absolute;
+        left: 332px;
+        top: 285px;
+        width: 238px;
+        height: 18px;
+        border-radius: 12px;
+        background: rgba(0,200,255,0);
+        box-shadow: 0 0 0 rgba(0,200,255,0);
+        transition: all 1s ease;
+        z-index: 8;
+    }
+
+    .channel.active {
+        background: rgba(0,200,255,0.45);
+        box-shadow:
+            0 0 12px rgba(0,200,255,0.9),
+            0 0 25px rgba(0,200,255,0.7);
+    }
+
+    .electron {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #0077ff;
+        opacity: 0;
+        z-index: 15;
+    }
+
+    .electron.active {
+        opacity: 1;
+    }
+
+    .current-particle {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ff8800;
+        box-shadow: 0 0 10px #ff8800;
+        z-index: 18;
+        opacity: 0;
+    }
+
+    .current-particle.flow {
+        opacity: 1;
+        animation: currentFlow 2.5s linear infinite;
+    }
+
+    @keyframes currentFlow {
+        from {
+            left: 185px;
+            top: 289px;
+        }
+        to {
+            left: 650px;
+            top: 289px;
+        }
+    }
+
+    .glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, rgba(0,150,255,0.15), transparent 60%);
+        opacity: 0;
+        transition: opacity 1s;
+        pointer-events: none;
+    }
+
+    .glow.active {
+        opacity: 1;
+    }
+
+    .warning {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 12px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 40;
+    }
+
+    .warning.show {
+        opacity: 1;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="mosfet-wrapper">
+
+        <div class="glow" id="glow"></div>
+
+        <img src="Screenshot 2026-05-15 8.47.23 AM.png" class="mosfet-image" alt="MOSFET 구조">
+
+        <div class="field" id="field"></div>
+
+        <div class="channel" id="channel"></div>
+
+        <div class="electron" id="e1"></div>
+        <div class="electron" id="e2"></div>
+        <div class="electron" id="e3"></div>
+        <div class="electron" id="e4"></div>
+        <div class="electron" id="e5"></div>
+
+        <div class="current-particle" id="current1"></div>
+        <div class="current-particle" id="current2"></div>
+        <div class="current-particle" id="current3"></div>
+
+        <button id="gateBtn">Gate 전압 걸기</button>
+        <button id="sourceBtn">Source 전압 걸기</button>
+
+        <div class="status" id="statusBox">
+            <b>현재 상태</b><br><br>
+            Gate 전압: OFF<br>
+            채널 형성: 없음<br>
+            전류 흐름: 없음
+        </div>
+
+        <div class="warning" id="warning"></div>
+
+    </div>
+</div>
+
+<script>
+    const gateBtn = document.getElementById('gateBtn');
+    const sourceBtn = document.getElementById('sourceBtn');
+
+    const field = document.getElementById('field');
+    const channel = document.getElementById('channel');
+    const glow = document.getElementById('glow');
+
+    const statusBox = document.getElementById('statusBox');
+    const warning = document.getElementById('warning');
+
+    const electrons = [
+        document.getElementById('e1'),
+        document.getElementById('e2'),
+        document.getElementById('e3'),
+        document.getElementById('e4'),
+        document.getElementById('e5')
+    ];
+
+    const currents = [
+        document.getElementById('current1'),
+        document.getElementById('current2'),
+        document.getElementById('current3')
+    ];
+
+    let gateOn = false;
+    let currentOn = false;
+    let animationRunning = false;
+
+    function updateStatus() {
+        statusBox.innerHTML = `
+            <b>현재 상태</b><br><br>
+            Gate 전압: ${gateOn ? 'ON' : 'OFF'}<br>
+            채널 형성: ${gateOn ? '형성됨' : '없음'}<br>
+            전류 흐름: ${currentOn ? '흐름' : '없음'}
+        `;
+    }
+
+    function showWarning(message) {
+        warning.textContent = message;
+        warning.classList.add('show');
+
+        setTimeout(() => {
+            warning.classList.remove('show');
+        }, 2200);
+    }
+
+    gateBtn.addEventListener('click', () => {
+
+        if (animationRunning) return;
+
+        gateOn = !gateOn;
+
+        if (gateOn) {
+            field.classList.add('active');
+            channel.classList.add('active');
+            glow.classList.add('active');
+
+            const positions = [
+                [355, 295],
+                [405, 295],
+                [455, 295],
+                [505, 295],
+                [555, 295]
+            ];
+
+            electrons.forEach((e, i) => {
+                e.style.left = positions[i][0] + 'px';
+                e.style.top = '395px';
+                e.classList.add('active');
+
+                setTimeout(() => {
+                    e.style.transition = 'all 1s ease';
+                    e.style.top = positions[i][1] + 'px';
+                }, 100);
+            });
+
+        } else {
+
+            if (currentOn) {
+                currents.forEach(c => c.classList.remove('flow'));
+                currentOn = false;
+            }
+
+            field.classList.remove('active');
+            channel.classList.remove('active');
+            glow.classList.remove('active');
+
+            electrons.forEach(e => {
+                e.style.top = '395px';
+                setTimeout(() => {
+                    e.classList.remove('active');
+                }, 1000);
+            });
+        }
+
+        updateStatus();
+    });
+
+    sourceBtn.addEventListener('click', () => {
+
+        if (!gateOn) {
+            showWarning('먼저 Gate 전압으로 채널을 형성해야 합니다.');
+            return;
+        }
+
+        currentOn = !currentOn;
+
+        if (currentOn) {
+            currents.forEach((c, i) => {
+                c.style.animationDelay = `${i * 0.6}s`;
+                c.classList.add('flow');
+            });
+        } else {
+            currents.forEach(c => {
+                c.classList.remove('flow');
+            });
+        }
+
+        updateStatus();
+    });
+
+    updateStatus();
+</script>
+
+</body>
+</html>
