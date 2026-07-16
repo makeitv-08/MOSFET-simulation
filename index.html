@@ -66,14 +66,14 @@
     }
 
     #gateBtn {
-        top: 10px;
+        top: 25px; 
         left: 50%;
         transform: translateX(-50%);
     }
 
     #sourceBtn {
-        top: 160px;
-        left: 70px;
+        top: 130px; 
+        left: 80px; 
     }
 
     .status {
@@ -93,10 +93,10 @@
     .field {
         position: absolute;
         left: 50%;
-        top: 108px;
+        top: 110px; 
         transform: translateX(-50%);
         width: 118px;
-        height: 210px;
+        height: 130px; 
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.8s;
@@ -133,7 +133,7 @@
     .channel {
         position: absolute;
         left: 332px;
-        top: 285px;
+        top: 240px; 
         width: 238px;
         height: 18px;
         border-radius: 12px;
@@ -183,11 +183,11 @@
     @keyframes currentFlow {
         from {
             left: 185px;
-            top: 289px;
+            top: 244px; 
         }
         to {
             left: 650px;
-            top: 289px;
+            top: 244px; 
         }
     }
 
@@ -309,7 +309,6 @@
     }
 
     gateBtn.addEventListener('click', () => {
-
         if (animationRunning) return;
 
         gateOn = !gateOn;
@@ -319,17 +318,19 @@
             channel.classList.add('active');
             glow.classList.add('active');
 
+            // 전자가 모이는 Y 좌표 수정 (295 -> 245)
             const positions = [
-                [355, 295],
-                [405, 295],
-                [455, 295],
-                [505, 295],
-                [555, 295]
+                [355, 245], 
+                [405, 245],
+                [455, 245],
+                [505, 245],
+                [555, 245]
             ];
 
             electrons.forEach((e, i) => {
                 e.style.left = positions[i][0] + 'px';
-                e.style.top = '395px';
+                // 전자 초기 위치 수정 (395 -> 345)
+                e.style.top = '345px'; 
                 e.classList.add('active');
 
                 setTimeout(() => {
@@ -339,7 +340,6 @@
             });
 
         } else {
-
             if (currentOn) {
                 currents.forEach(c => c.classList.remove('flow'));
                 currentOn = false;
@@ -350,7 +350,8 @@
             glow.classList.remove('active');
 
             electrons.forEach(e => {
-                e.style.top = '395px';
+                // 전자 초기화 위치 수정
+                e.style.top = '345px';
                 setTimeout(() => {
                     e.classList.remove('active');
                 }, 1000);
@@ -361,7 +362,6 @@
     });
 
     sourceBtn.addEventListener('click', () => {
-
         if (!gateOn) {
             showWarning('먼저 Gate 전압으로 채널을 형성해야 합니다.');
             return;
